@@ -66,31 +66,42 @@ class BlogController {
   };
   static blogupdate = async (req, res) => {
     try {
+
+       if(req.files){
+        const blogdata = await blogModel.findById(req.params.id);
+        // console.log(blogdata)
+        const imageid = blogdata.image.public_id;
+        // console.log(imageid);
+        await cloudinary.uploader.destroy(imageid);
+  
+        //image update code
+  
+        const file = req.files.image;
+        const myimage = await cloudinary.uploader.upload(file.tempFilePath, {
+          folder: "blogs_image",
+        });
+        var imgdata = {  title: req.body.title,
+          description: req.body.description,
+          image: {                                                            
+            public_id: myimage.public_id,
+            url: myimage.secure_url,
+          },}
+          
+
+       }else{
+            var imgdata = {
+              title: req.body.title,
+              description: req.body.description,
+            }
+       }
+
       //   console.log(req.params.id);
       //   console.log(req.body);
 
       // icode for mage deletion
-      const blogdata = await blogModel.findById(req.params.id);
-      // console.log(blogdata)
-      const imageid = blogdata.image.public_id;
-      // console.log(imageid);
-      await cloudinary.uploader.destroy(imageid);
+    
 
-      //image update code
-
-      const file = req.files.image;
-      const myimage = await cloudinary.uploader.upload(file.tempFilePath, {
-        folder: "blogs_image",
-      });
-
-      const result = await blogModel.findByIdAndUpdate(req.params.id, {
-        title: req.body.title,
-        description: req.body.description,
-        image: {                                                            
-          public_id: myimage.public_id,
-          url: myimage.secure_url,
-        },
-      });
+      const result = await blogModel.findByIdAndUpdate(req.params.id, imgdata);
       await result.save();
       res.redirect("/admin/blogdisplay");
     } catch (err) {
